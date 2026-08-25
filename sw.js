@@ -1,12 +1,12 @@
 const CACHE_NAME = 'jules-pwa-v1';
 const ASSETS_TO_CACHE = [
-    '/',
-    '/index.html',
-    '/style.css',
-    '/app.js',
-    '/manifest.json',
-    '/icons/icon-192x192.png',
-    '/icons/icon-512x512.png'
+    './',
+    'index.html',
+    'style.css',
+    'app.js',
+    'manifest.json',
+    'icons/icon-192x192.png',
+    'icons/icon-512x512.png'
 ];
 
 // Installation: mise en cache des assets statiques
@@ -70,13 +70,13 @@ self.addEventListener('notificationclick', event => {
         clients.matchAll({ type: 'window', includeUncontrolled: true }).then(windowClients => {
             // Si l'application est déjà ouverte, la mettre au premier plan
             for (let client of windowClients) {
-                if (client.url === '/' && 'focus' in client) {
+                if ((client.url.endsWith('/') || client.url.endsWith('index.html')) && 'focus' in client) {
                     return client.focus();
                 }
             }
             // Sinon, ouvrir une nouvelle fenêtre
             if (clients.openWindow) {
-                return clients.openWindow('/');
+                return clients.openWindow('./');
             }
         })
     );
