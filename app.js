@@ -32,6 +32,7 @@ const elements = {
 
     // Settings View
     formSettings: document.getElementById('form-settings'),
+    toggleTheme: document.getElementById('toggle-theme'),
     inputApiUrl: document.getElementById('input-api-url'),
     inputApiKey: document.getElementById('input-api-key'),
     inputDefaultRepo: document.getElementById('input-default-repo'),
@@ -41,6 +42,13 @@ const elements = {
 
 // --- INIT ---
 function init() {
+    // Initialiser le thème
+    const savedTheme = localStorage.getItem('jules_theme') || 'light';
+    if (savedTheme === 'dark') {
+        document.documentElement.setAttribute('data-theme', 'dark');
+        if (elements.toggleTheme) elements.toggleTheme.checked = true;
+    }
+
     // Remplir les paramètres avec l'état actuel
     elements.inputApiUrl.value = state.apiUrl;
     elements.inputApiKey.value = state.apiKey;
@@ -115,6 +123,12 @@ function setupForms() {
         localStorage.setItem('jules_default_repo', state.defaultRepo);
 
         elements.inputRepo.value = state.defaultRepo;
+
+        if (elements.toggleTheme) {
+            const newTheme = elements.toggleTheme.checked ? 'dark' : 'light';
+            document.documentElement.setAttribute('data-theme', newTheme);
+            localStorage.setItem('jules_theme', newTheme);
+        }
 
         showSettingsMessage('Paramètres sauvegardés avec succès !');
         fetchSessions(); // Rafraîchir les sessions avec la nouvelle clé
@@ -253,22 +267,45 @@ function renderSessionsList() {
         return;
     }
 
-    elements.sessionsList.innerHTML = state.sessions.map(s => {
-        const name = s.name || s.id || 'Session Inconnue';
-        const shortName = name.split('/').pop();
-        const status = s.state || s.status || 'UNKNOWN';
-        const date = s.createTime ? new Date(s.createTime).toLocaleString() : '';
+    // Regrouper par repo
+    const grouped = {};
+    state.sessions.forEach(s => {
+        const repo = s.sourceRepository || s.repo || 'Dépôt Inconnu';
+        if (!grouped[repo]) grouped[repo] = [];
+        grouped[repo].push(s);
+    });
 
-        return `
-            <div class="session-card" data-id="${name}">
-                <div class="session-card-header">
-                    <span class="session-card-title">Session ${shortName}</span>
-                    <span class="chip ${getStatusClass(status)}">${status}</span>
+    let html = '';
+
+    for (const repo in grouped) {
+        html += `<h3 style="margin: 16px 0 8px 0; font-size: 14px; color: var(--md-sys-color-primary);">${repo}</h3>`;
+
+        html += grouped[repo].map(s => {
+            const name = s.name || s.id || 'Session Inconnue';
+            const status = s.state || s.status || 'UNKNOWN';
+            const date = s.createTime ? new Date(s.createTime).toLocaleString() : '';
+
+            // Essayer de trouver un titre intelligent
+            let title = s.title || '';
+            if (!title && s.input && s.input.prompt) {
+                 title = s.input.prompt;
+            }
+            if (title.length > 50) title = title.substring(0, 50) + '...';
+            if (!title) title = `Session ${name.split('/').pop()}`;
+
+            return `
+                <div class="session-card" data-id="${name}">
+                    <div class="session-card-header">
+                        <span class="session-card-title">${title}</span>
+                        <span class="chip ${getStatusClass(status)}">${status}</span>
+                    </div>
+                    ${date ? `<span class="session-card-date">${date}</span>` : ''}
                 </div>
-                ${date ? `<span class="session-card-date">${date}</span>` : ''}
-            </div>
-        `;
-    }).join('');
+            `;
+        }).join('');
+    }
+
+    elements.sessionsList.innerHTML = html;
 
     // Ajouter les écouteurs de clic
     document.querySelectorAll('.session-card').forEach(card => {
@@ -364,6 +401,21 @@ function parseMessageContent(message) {
     if (!message) return '';
     let text = typeof message === 'string' ? message : JSON.stringify(message);
 
+    // Tenter de parser le JSON si c'est une string JSON (souvent le cas dans les payloads illisibles)
+    try {
+        const parsed = JSON.parse(text);
+        if (parsed.agentMessage) text = parsed.agentMessage;
+        else if (parsed.userMessage) text = parsed.userMessage;
+        else if (typeof parsed === 'string') text = parsed;
+        // Ne pas convertir l'objet entier en JSON illisible si on cherche un chat lisible
+        else if (typeof parsed === 'object') {
+             // Essayer d'extraire des champs connus ou laisser vide
+             text = parsed.message || parsed.description || 'Contenu système masqué.';
+        }
+    } catch (e) {
+        // C'est du texte normal, on continue
+    }
+
     // Remplacer les liens Markdown [Texte](URL) par des liens HTML
     const mdLinkRegex = /\[([^\]]+)\]\((https?:\/\/[^\)]+)\)/g;
     text = text.replace(mdLinkRegex, '<a href="$2" target="_blank" rel="noopener">$1</a>');
@@ -412,57 +464,71 @@ function renderStepper(session, activitiesData) {
     elements.detailSessionStatus.className = `chip ${getStatusClass(status)}`;
 
     const activities = activitiesData.activities || [];
-    let html = '';
+    let html = '<div class="chat-container">';
 
-    if (activities.length === 0) {
-        html = '<div class="step"><div class="step-indicator"><div class="step-icon">1</div></div><div class="step-content"><div class="step-title">Initialisation</div><div class="step-description">En attente des premières activités...</div></div></div>';
+    // Ajouter le prompt initial comme premier message utilisateur si disponible
+    if (session.input && session.input.prompt) {
+        html += `
+            <div class="chat-message user">
+                <div class="chat-bubble">${parseMessageContent(session.input.prompt)}</div>
+            </div>
+        `;
+    }
+
+    if (activities.length === 0 && !session.input) {
+        html += '<div class="chat-system">En attente des premières activités...</div>';
     } else {
-        html = activities.map((act, index) => {
-            const isLast = index === activities.length - 1;
+        html += activities.map((act) => {
             const actStatus = act.status || act.state || 'COMPLETED';
-            let statusClass = 'completed'; // default pour l'historique
 
-            if (isLast && ['PENDING', 'IN_PROGRESS', 'PLANNING'].includes(status)) {
-                statusClass = 'active';
-            } else if (actStatus === 'FAILED') {
-                statusClass = 'failed';
+            // Déterminer l'auteur et le type de message
+            let author = 'system'; // 'user', 'jules', 'system'
+            let content = '';
+
+            if (act.type === 'USER_MESSAGE' || (act.payload && act.payload.userMessage)) {
+                author = 'user';
+                content = act.message || (act.payload ? act.payload.userMessage : '') || act.description;
+            } else if (act.type === 'AGENT_MESSAGE' || (act.payload && act.payload.agentMessage)) {
+                author = 'jules';
+                content = act.message || (act.payload ? act.payload.agentMessage : '') || act.description;
+            } else {
+                // Message système pour les autres étapes techniques
+                const title = act.type || act.name || 'Activité';
+                const sysClass = actStatus === 'FAILED' ? 'error' : actStatus === 'COMPLETED' ? 'success' : '';
+                return `<div class="chat-system ${sysClass}">${title.replace(/_/g, ' ')} ${actStatus === 'FAILED' ? '❌' : '✓'}</div>`;
             }
 
-            const title = act.type || act.name || `Étape ${index + 1}`;
-            const message = parseMessageContent(act.message || act.description || JSON.stringify(act.payload || act));
+            if (!content) {
+                // Si on n'arrive pas à extraire proprement, on convertit le payload en texte de secours
+                content = typeof act === 'object' ? JSON.stringify(act) : String(act);
+                author = 'system'; // Forcer en system si c'est du JSON illisible
+                return `<div class="chat-system">Détails d'activité (JSON) masqués pour lisibilité</div>`;
+            }
+
+            const parsedContent = parseMessageContent(content);
 
             return `
-                <div class="step ${statusClass}">
-                    <div class="step-indicator">
-                        <div class="step-icon">${statusClass === 'completed' ? '✓' : statusClass === 'failed' ? '!' : (index+1)}</div>
-                        <div class="step-line"></div>
-                    </div>
-                    <div class="step-content">
-                        <div class="step-title">${title}</div>
-                        <div class="step-description">${message}</div>
-                    </div>
+                <div class="chat-message ${author}">
+                    <div class="chat-bubble">${parsedContent}</div>
                 </div>
             `;
         }).join('');
     }
 
-    // Si une PR est détectée, ajouter une étape finale distincte
+    // Si une PR est détectée, ajouter un message de conclusion de Jules
     const prUrl = extractPrUrl(session, activitiesData);
     if (prUrl) {
          html += `
-            <div class="step completed" style="margin-top: 16px;">
-                <div class="step-indicator">
-                    <div class="step-icon" style="background-color: var(--md-sys-color-primary);">🔗</div>
-                </div>
-                <div class="step-content">
-                    <div class="step-title">Pull Request Créée</div>
-                    <div class="step-description">
-                        <a href="${prUrl}" target="_blank" rel="noopener" class="btn-primary" style="display:inline-flex; border-radius: 8px; padding: 8px 16px; margin-top:8px;">Voir la Pull Request</a>
-                    </div>
+            <div class="chat-system success">Pull Request Créée</div>
+            <div class="chat-message jules">
+                <div class="chat-bubble">
+                    J'ai terminé les modifications ! Vous pouvez consulter la <a href="${prUrl}" target="_blank" rel="noopener">Pull Request ici</a>.
                 </div>
             </div>
         `;
     }
+
+    html += '</div>';
 
     elements.stepperContainer.innerHTML = html;
 }
