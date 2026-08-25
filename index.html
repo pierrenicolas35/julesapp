@@ -57,6 +57,13 @@
         <!-- VUE: Paramètres -->
         <section id="view-settings" class="view">
             <form id="form-settings" class="form-container">
+                <div class="form-group theme-toggle-group" style="display: flex; justify-content: space-between; align-items: center; background-color: var(--md-sys-color-surface-variant); padding: 16px; border-radius: 8px;">
+                    <label for="toggle-theme" style="margin-bottom: 0;">Mode sombre</label>
+                    <label class="switch">
+                        <input type="checkbox" id="toggle-theme">
+                        <span class="slider round"></span>
+                    </label>
+                </div>
                 <div class="form-group">
                     <label for="input-api-url">URL de l'API Jules</label>
                     <input type="url" id="input-api-url" value="https://jules.googleapis.com/v1alpha" required>
