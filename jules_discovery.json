@@ -1,0 +1,1103 @@
+{
+  "ownerName": "Google",
+  "schemas": {
+    "GitHubRepoContext": {
+      "description": "Context to use a GitHubRepo in a session.",
+      "type": "object",
+      "id": "GitHubRepoContext",
+      "properties": {
+        "startingBranch": {
+          "description": "Required. The name of the branch to start the session from.",
+          "type": "string"
+        }
+      }
+    },
+    "Artifact": {
+      "description": "An artifact is a single unit of data produced by an activity step.",
+      "properties": {
+        "media": {
+          "$ref": "Media",
+          "description": "A media file was produced (e.g. image, video)."
+        },
+        "bashOutput": {
+          "$ref": "BashOutput",
+          "description": "A bash output was produced."
+        },
+        "changeSet": {
+          "$ref": "ChangeSet",
+          "description": "A change set was produced (e.g. code changes)."
+        }
+      },
+      "id": "Artifact",
+      "type": "object"
+    },
+    "ApprovePlanResponse": {
+      "properties": {},
+      "description": "Response message for the ApprovePlan RPC.",
+      "type": "object",
+      "id": "ApprovePlanResponse"
+    },
+    "Empty": {
+      "id": "Empty",
+      "type": "object",
+      "description": "A generic empty message that you can re-use to avoid defining duplicated empty messages in your APIs. A typical example is to use it as the request or the response type of an API method. For instance: service Foo { rpc Bar(google.protobuf.Empty) returns (google.protobuf.Empty); }",
+      "properties": {}
+    },
+    "Source": {
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Identifier. The full resource name (e.g., \"sources/{source}\")."
+        },
+        "githubRepo": {
+          "description": "A GitHub repo.",
+          "$ref": "GitHubRepo"
+        },
+        "id": {
+          "type": "string",
+          "description": "Output only. The id of the source. This is the same as the \"{source}\" part of the resource name (e.g., \"sources/{source}\").",
+          "readOnly": true
+        }
+      },
+      "description": "An input source of data for a session.",
+      "type": "object",
+      "id": "Source"
+    },
+    "ChangeSet": {
+      "description": "A set of changes to be applied to a source.",
+      "id": "ChangeSet",
+      "properties": {
+        "source": {
+          "description": "The name of the source this change set applies to. Format: sources/{source}",
+          "type": "string"
+        },
+        "gitPatch": {
+          "description": "A patch in Git format.",
+          "$ref": "GitPatch"
+        }
+      },
+      "type": "object"
+    },
+    "SourceContext": {
+      "properties": {
+        "githubRepoContext": {
+          "$ref": "GitHubRepoContext",
+          "description": "Context to use a GitHubRepo in a session."
+        },
+        "workingBranch": {
+          "description": "Optional. The branch to push to for the session. Only used if the session is set to automatically create a branch through automation mode. If not provided, a branch name will be generated when needed.",
+          "type": "string"
+        },
+        "source": {
+          "description": "Required. The name of the source this context is for. To get the list of sources, use the ListSources API. Format: sources/{source}",
+          "type": "string"
+        },
+        "environmentVariablesEnabled": {
+          "type": "boolean",
+          "description": "Optional. Enables environment variables in the session. If true, the session will use environment variables configured for this source."
+        }
+      },
+      "type": "object",
+      "description": "Context for how to use a source in a session.",
+      "id": "SourceContext"
+    },
+    "UnarchiveSessionRequest": {
+      "description": "Request message for UnarchiveSession.",
+      "type": "object",
+      "properties": {},
+      "id": "UnarchiveSessionRequest"
+    },
+    "SessionFailed": {
+      "description": "The session failed.",
+      "type": "object",
+      "properties": {
+        "reason": {
+          "type": "string",
+          "description": "The reason the session failed."
+        }
+      },
+      "id": "SessionFailed"
+    },
+    "ArchiveSessionRequest": {
+      "properties": {},
+      "id": "ArchiveSessionRequest",
+      "description": "Request message for ArchiveSession.",
+      "type": "object"
+    },
+    "SendMessageRequest": {
+      "description": "Request message for the SendMessage RPC.",
+      "id": "SendMessageRequest",
+      "properties": {
+        "prompt": {
+          "description": "Required. The user prompt to send to the session.",
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "GitHubRepo": {
+      "description": "A GitHub repo.",
+      "type": "object",
+      "id": "GitHubRepo",
+      "properties": {
+        "branches": {
+          "description": "The list of active branches for this repo.",
+          "items": {
+            "$ref": "GitHubBranch"
+          },
+          "type": "array"
+        },
+        "isPrivate": {
+          "description": "Whether this repo is private.",
+          "type": "boolean"
+        },
+        "owner": {
+          "type": "string",
+          "description": "The owner of the repo; the `` in `https://github.com//`."
+        },
+        "defaultBranch": {
+          "$ref": "GitHubBranch",
+          "description": "The default branch for this repo."
+        },
+        "repo": {
+          "type": "string",
+          "description": "The name of the repo; the `` in `https://github.com//`."
+        }
+      }
+    },
+    "SessionCompleted": {
+      "type": "object",
+      "properties": {},
+      "description": "The session was completed.",
+      "id": "SessionCompleted"
+    },
+    "ListActivitiesResponse": {
+      "id": "ListActivitiesResponse",
+      "properties": {
+        "activities": {
+          "type": "array",
+          "description": "The activities from the specified session.",
+          "items": {
+            "$ref": "Activity"
+          }
+        },
+        "nextPageToken": {
+          "description": "A token, which can be sent as `page_token` to retrieve the next page. If this field is omitted, there are no subsequent pages.",
+          "type": "string"
+        }
+      },
+      "type": "object",
+      "description": "Response message for the ListActivities RPC."
+    },
+    "PlanApproved": {
+      "id": "PlanApproved",
+      "properties": {
+        "planId": {
+          "description": "The ID of the plan that was approved.",
+          "type": "string"
+        }
+      },
+      "description": "A plan was approved.",
+      "type": "object"
+    },
+    "Plan": {
+      "id": "Plan",
+      "type": "object",
+      "description": "A plan is a sequence of steps that the agent will take to complete the task.",
+      "properties": {
+        "id": {
+          "readOnly": true,
+          "description": "Output only. ID for this plan; unique within a session.",
+          "type": "string"
+        },
+        "steps": {
+          "type": "array",
+          "readOnly": true,
+          "description": "Output only. The steps in the plan.",
+          "items": {
+            "$ref": "PlanStep"
+          }
+        },
+        "createTime": {
+          "description": "Output only. Time when the plan was created.",
+          "format": "google-datetime",
+          "readOnly": true,
+          "type": "string"
+        }
+      }
+    },
+    "Media": {
+      "id": "Media",
+      "description": "A media output.",
+      "properties": {
+        "data": {
+          "description": "The media data.",
+          "type": "string",
+          "format": "byte"
+        },
+        "mimeType": {
+          "description": "The media mime type.",
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "BashOutput": {
+      "id": "BashOutput",
+      "properties": {
+        "command": {
+          "description": "The bash command.",
+          "type": "string"
+        },
+        "exitCode": {
+          "description": "The bash exit code.",
+          "format": "int32",
+          "type": "integer"
+        },
+        "output": {
+          "description": "The bash output. Includes both stdout and stderr.",
+          "type": "string"
+        }
+      },
+      "description": "A bash output.",
+      "type": "object"
+    },
+    "PlanStep": {
+      "description": "A step in a plan.",
+      "type": "object",
+      "id": "PlanStep",
+      "properties": {
+        "title": {
+          "type": "string",
+          "readOnly": true,
+          "description": "Output only. The title of the step."
+        },
+        "description": {
+          "description": "Output only. The description of the step.",
+          "readOnly": true,
+          "type": "string"
+        },
+        "index": {
+          "type": "integer",
+          "format": "int32",
+          "description": "Output only. 0-based index into the plan.steps.",
+          "readOnly": true
+        },
+        "id": {
+          "type": "string",
+          "readOnly": true,
+          "description": "Output only. ID for this step; unique within a plan."
+        }
+      }
+    },
+    "UserMessaged": {
+      "id": "UserMessaged",
+      "properties": {
+        "userMessage": {
+          "type": "string",
+          "description": "The message the user posted."
+        }
+      },
+      "type": "object",
+      "description": "The user posted a message."
+    },
+    "Session": {
+      "description": "next_id: 19 A session is a contiguous amount of work within the same context.",
+      "type": "object",
+      "properties": {
+        "sourceContext": {
+          "description": "Optional. The source to use in this session, with additional context. If not provided, Jules will start from scratch.",
+          "$ref": "SourceContext"
+        },
+        "createTime": {
+          "readOnly": true,
+          "description": "Output only. The time the session was created.",
+          "type": "string",
+          "format": "google-datetime"
+        },
+        "url": {
+          "type": "string",
+          "readOnly": true,
+          "description": "Output only. The URL of the session to view the session in the Jules web app."
+        },
+        "id": {
+          "description": "Output only. The id of the session. This is the same as the \"{session}\" part of the resource name (e.g., \"sessions/{session}\").",
+          "type": "string",
+          "readOnly": true
+        },
+        "updateTime": {
+          "type": "string",
+          "format": "google-datetime",
+          "readOnly": true,
+          "description": "Output only. The time the session was last updated."
+        },
+        "name": {
+          "description": "Output only. Identifier. The full resource name (e.g., \"sessions/{session}\").",
+          "readOnly": true,
+          "type": "string"
+        },
+        "title": {
+          "type": "string",
+          "description": "Optional. If not provided, the system will generate one."
+        },
+        "state": {
+          "description": "Output only. The state of the session.",
+          "enumDeprecated": [
+            false,
+            false,
+            true,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false
+          ],
+          "enumDescriptions": [
+            "The state is unspecified.",
+            "The session is queued.",
+            "Deprecated: This state is no longer used. The agent is planning.",
+            "The agent is waiting for plan approval.",
+            "The agent is waiting for user feedback.",
+            "The session is in progress.",
+            "The session is paused.",
+            "The session has failed.",
+            "The session has completed."
+          ],
+          "type": "string",
+          "readOnly": true,
+          "enum": [
+            "STATE_UNSPECIFIED",
+            "QUEUED",
+            "PLANNING",
+            "AWAITING_PLAN_APPROVAL",
+            "AWAITING_USER_FEEDBACK",
+            "IN_PROGRESS",
+            "PAUSED",
+            "FAILED",
+            "COMPLETED"
+          ]
+        },
+        "prompt": {
+          "type": "string",
+          "description": "Required. The prompt to start the session with."
+        },
+        "requirePlanApproval": {
+          "type": "boolean",
+          "description": "Optional. Input only. If true, plans the agent generates will require explicit plan approval before the agent starts working. If not set, plans will be auto-approved."
+        },
+        "archived": {
+          "readOnly": true,
+          "description": "Output only. Whether the session is archived.",
+          "type": "boolean"
+        },
+        "outputs": {
+          "readOnly": true,
+          "type": "array",
+          "items": {
+            "$ref": "SessionOutput"
+          },
+          "description": "Output only. The outputs of the session, if any."
+        },
+        "automationMode": {
+          "enumDescriptions": [
+            "The automation mode is unspecified. Default to no automation.",
+            "Whenever a final code patch is generated in the session, automatically create a branch and a pull request for it, if applicable."
+          ],
+          "enum": [
+            "AUTOMATION_MODE_UNSPECIFIED",
+            "AUTO_CREATE_PR"
+          ],
+          "description": "Optional. Input only. The automation mode of the session. If not set, the default automation mode will be used.",
+          "type": "string"
+        }
+      },
+      "id": "Session"
+    },
+    "SendMessageResponse": {
+      "description": "Response message for the SendMessage RPC.",
+      "id": "SendMessageResponse",
+      "properties": {},
+      "type": "object"
+    },
+    "PlanGenerated": {
+      "properties": {
+        "plan": {
+          "$ref": "Plan",
+          "description": "The plan that was generated."
+        }
+      },
+      "description": "A plan was generated.",
+      "type": "object",
+      "id": "PlanGenerated"
+    },
+    "AgentMessaged": {
+      "properties": {
+        "agentMessage": {
+          "description": "The message the agent posted.",
+          "type": "string"
+        }
+      },
+      "id": "AgentMessaged",
+      "type": "object",
+      "description": "The agent posted a message."
+    },
+    "GitHubBranch": {
+      "type": "object",
+      "properties": {
+        "displayName": {
+          "type": "string",
+          "description": "The name of the GitHub branch."
+        }
+      },
+      "description": "A GitHub branch.",
+      "id": "GitHubBranch"
+    },
+    "ProgressUpdated": {
+      "id": "ProgressUpdated",
+      "type": "object",
+      "properties": {
+        "title": {
+          "description": "The title of the progress update.",
+          "type": "string"
+        },
+        "description": {
+          "type": "string",
+          "description": "The description of the progress update."
+        }
+      },
+      "description": "There was a progress update."
+    },
+    "ApprovePlanRequest": {
+      "description": "Request message for the ApprovePlan RPC.",
+      "id": "ApprovePlanRequest",
+      "properties": {},
+      "type": "object"
+    },
+    "PullRequest": {
+      "type": "object",
+      "id": "PullRequest",
+      "description": "A pull request.",
+      "properties": {
+        "url": {
+          "description": "The URL of the pull request.",
+          "type": "string"
+        },
+        "baseRef": {
+          "type": "string",
+          "description": "The base branch name of the pull request (e.g., \"main\")."
+        },
+        "description": {
+          "type": "string",
+          "description": "The description of the pull request."
+        },
+        "title": {
+          "description": "The title of the pull request.",
+          "type": "string"
+        },
+        "headRef": {
+          "description": "The head branch name of the pull request (e.g., \"feature-x\").",
+          "type": "string"
+        }
+      }
+    },
+    "GitPatch": {
+      "id": "GitPatch",
+      "type": "object",
+      "properties": {
+        "unidiffPatch": {
+          "type": "string",
+          "description": "The patch in unidiff format."
+        },
+        "baseCommitId": {
+          "type": "string",
+          "description": "The base commit id of the patch. This is the id of the commit that the patch should be applied to."
+        },
+        "suggestedCommitMessage": {
+          "type": "string",
+          "description": "A suggested commit message for the patch, if one is generated."
+        }
+      },
+      "description": "A patch in Git format."
+    },
+    "Activity": {
+      "type": "object",
+      "id": "Activity",
+      "description": "An activity is a single unit of work within a session.",
+      "properties": {
+        "artifacts": {
+          "items": {
+            "$ref": "Artifact"
+          },
+          "readOnly": true,
+          "type": "array",
+          "description": "Output only. The artifacts produced by this activity."
+        },
+        "planGenerated": {
+          "description": "A plan was generated.",
+          "$ref": "PlanGenerated"
+        },
+        "sessionFailed": {
+          "$ref": "SessionFailed",
+          "description": "The session failed."
+        },
+        "agentMessaged": {
+          "$ref": "AgentMessaged",
+          "description": "The agent posted a message."
+        },
+        "planApproved": {
+          "description": "A plan was approved.",
+          "$ref": "PlanApproved"
+        },
+        "userMessaged": {
+          "$ref": "UserMessaged",
+          "description": "The user posted a message."
+        },
+        "id": {
+          "type": "string",
+          "readOnly": true,
+          "description": "Output only. The id of the activity. This is the same as the \"{activity}\" part of the resource name (e.g., \"sessions/{session}/activities/{activity}\")."
+        },
+        "description": {
+          "description": "Output only. A description of this activity.",
+          "readOnly": true,
+          "type": "string"
+        },
+        "name": {
+          "description": "Identifier. The full resource name (e.g., \"sessions/{session}/activities/{activity}\").",
+          "type": "string"
+        },
+        "createTime": {
+          "readOnly": true,
+          "type": "string",
+          "format": "google-datetime",
+          "description": "Output only. The time at which this activity was created."
+        },
+        "originator": {
+          "type": "string",
+          "description": "The entity that this activity originated from (e.g. \"user\", \"agent\", \"system\")."
+        },
+        "sessionCompleted": {
+          "description": "The session was completed.",
+          "$ref": "SessionCompleted"
+        },
+        "progressUpdated": {
+          "description": "There was a progress update.",
+          "$ref": "ProgressUpdated"
+        }
+      }
+    },
+    "SessionOutput": {
+      "type": "object",
+      "description": "An output of a session.",
+      "properties": {
+        "pullRequest": {
+          "description": "A pull request created by the session, if applicable.",
+          "$ref": "PullRequest"
+        },
+        "changeSet": {
+          "description": "A change set created by the session, if applicable.",
+          "$ref": "ChangeSet"
+        }
+      },
+      "id": "SessionOutput"
+    },
+    "ListSessionsResponse": {
+      "type": "object",
+      "id": "ListSessionsResponse",
+      "properties": {
+        "nextPageToken": {
+          "description": "A token, which can be sent as `page_token` to retrieve the next page. If this field is omitted, there are no subsequent pages.",
+          "type": "string"
+        },
+        "sessions": {
+          "items": {
+            "$ref": "Session"
+          },
+          "type": "array",
+          "description": "The sessions from the specified request."
+        }
+      },
+      "description": "Response message for ListSessions."
+    },
+    "ListSourcesResponse": {
+      "properties": {
+        "nextPageToken": {
+          "description": "A token, which can be sent as `page_token` to retrieve the next page. If this field is omitted, there are no subsequent pages.",
+          "type": "string"
+        },
+        "sources": {
+          "items": {
+            "$ref": "Source"
+          },
+          "type": "array",
+          "description": "The sources from the specified request."
+        }
+      },
+      "id": "ListSourcesResponse",
+      "type": "object",
+      "description": "Response message for the ListSources RPC."
+    }
+  },
+  "id": "jules:v1alpha",
+  "baseUrl": "https://jules.googleapis.com/",
+  "description": "Programmatically create and access your asynchronous coding tasks.",
+  "batchPath": "batch",
+  "discoveryVersion": "v1",
+  "kind": "discovery#restDescription",
+  "version_module": true,
+  "version": "v1alpha",
+  "revision": "20260823",
+  "rootUrl": "https://jules.googleapis.com/",
+  "fullyEncodeReservedExpansion": true,
+  "name": "jules",
+  "icons": {
+    "x32": "http://www.google.com/images/icons/product/search-32.gif",
+    "x16": "http://www.google.com/images/icons/product/search-16.gif"
+  },
+  "canonicalName": "Jules",
+  "documentationLink": "https://jules.google.com",
+  "auth": {
+    "oauth2": {
+      "scopes": {
+        "https://www.googleapis.com/auth/cloud-platform": {
+          "description": "See, edit, configure, and delete your Google Cloud data and see the email address for your Google Account."
+        }
+      }
+    }
+  },
+  "resources": {
+    "sessions": {
+      "resources": {
+        "activities": {
+          "methods": {
+            "list": {
+              "response": {
+                "$ref": "ListActivitiesResponse"
+              },
+              "description": "Lists activities for a session.",
+              "httpMethod": "GET",
+              "parameters": {
+                "pageToken": {
+                  "description": "Optional. A page token, received from a previous `ListActivities` call.",
+                  "location": "query",
+                  "type": "string"
+                },
+                "filter": {
+                  "location": "query",
+                  "description": "Optional. The filter expression for listing activities. If not set, all activities will be returned. Currently only supports filtering by create_time. Invalid filter strings will result in an INVALID_ARGUMENT error. The OR operator has higher precedence than AND. The expression a AND b OR c evaluates to a AND (b OR c). Prefer to use explicit parentheses in complex expressions. Example filters: - 'create_time:*' (matches all activities with create_time set) - 'create_time \u003e \"2024-09-04T10:00:00Z\"' - 'create_time \u003e \"2024-09-04T10:00:00Z\" AND create_time \u003c \"2024-09-05T10:00:00Z\"' - 'create_time \u003c \"2024-09-04T10:00:00Z\" OR create_time \u003e \"2024-09-05T10:00:00Z\"'",
+                  "type": "string"
+                },
+                "pageSize": {
+                  "format": "int32",
+                  "type": "integer",
+                  "description": "Optional. The number of activities to return. Must be between 1 and 100, inclusive. If unset, defaults to 50. If set to greater than 100, it will be coerced to 100.",
+                  "location": "query"
+                },
+                "parent": {
+                  "description": "Required. The parent session, which owns this collection of activities. Format: sessions/{session}",
+                  "pattern": "^sessions/[^/]+$",
+                  "required": true,
+                  "type": "string",
+                  "location": "path"
+                }
+              },
+              "scopes": [
+                "https://www.googleapis.com/auth/cloud-platform"
+              ],
+              "flatPath": "v1alpha/sessions/{sessionsId}/activities",
+              "id": "jules.sessions.activities.list",
+              "path": "v1alpha/{+parent}/activities",
+              "parameterOrder": [
+                "parent"
+              ]
+            },
+            "get": {
+              "scopes": [
+                "https://www.googleapis.com/auth/cloud-platform"
+              ],
+              "httpMethod": "GET",
+              "parameterOrder": [
+                "name"
+              ],
+              "response": {
+                "$ref": "Activity"
+              },
+              "path": "v1alpha/{+name}",
+              "id": "jules.sessions.activities.get",
+              "flatPath": "v1alpha/sessions/{sessionsId}/activities/{activitiesId}",
+              "parameters": {
+                "name": {
+                  "description": "Required. The resource name of the activity to retrieve. Format: sessions/{session}/activities/{activity}",
+                  "required": true,
+                  "pattern": "^sessions/[^/]+/activities/[^/]+$",
+                  "type": "string",
+                  "location": "path"
+                }
+              },
+              "description": "Gets a single activity."
+            }
+          }
+        }
+      },
+      "methods": {
+        "approvePlan": {
+          "response": {
+            "$ref": "ApprovePlanResponse"
+          },
+          "id": "jules.sessions.approvePlan",
+          "path": "v1alpha/{+session}:approvePlan",
+          "parameters": {
+            "session": {
+              "required": true,
+              "pattern": "^sessions/[^/]+$",
+              "description": "Required. The resource name of the session to approve the plan in. Format: sessions/{session}",
+              "type": "string",
+              "location": "path"
+            }
+          },
+          "scopes": [
+            "https://www.googleapis.com/auth/cloud-platform"
+          ],
+          "request": {
+            "$ref": "ApprovePlanRequest"
+          },
+          "httpMethod": "POST",
+          "flatPath": "v1alpha/sessions/{sessionsId}:approvePlan",
+          "description": "Approves a plan in a session.",
+          "parameterOrder": [
+            "session"
+          ]
+        },
+        "unarchive": {
+          "response": {
+            "$ref": "Session"
+          },
+          "httpMethod": "POST",
+          "request": {
+            "$ref": "UnarchiveSessionRequest"
+          },
+          "description": "Unarchives a session.",
+          "parameterOrder": [
+            "name"
+          ],
+          "path": "v1alpha/{+name}:unarchive",
+          "scopes": [
+            "https://www.googleapis.com/auth/cloud-platform"
+          ],
+          "id": "jules.sessions.unarchive",
+          "flatPath": "v1alpha/sessions/{sessionsId}:unarchive",
+          "parameters": {
+            "name": {
+              "location": "path",
+              "type": "string",
+              "pattern": "^sessions/[^/]+$",
+              "required": true,
+              "description": "Required. The resource name of the session to unarchive. Format: sessions/{session}"
+            }
+          }
+        },
+        "list": {
+          "parameterOrder": [],
+          "path": "v1alpha/sessions",
+          "parameters": {
+            "pageToken": {
+              "location": "query",
+              "type": "string",
+              "description": "Optional. A page token, received from a previous `ListSessions` call."
+            },
+            "pageSize": {
+              "location": "query",
+              "format": "int32",
+              "type": "integer",
+              "description": "Optional. The number of sessions to return. Must be between 1 and 100, inclusive. If unset, defaults to 30. If set to greater than 100, it will be coerced to 100."
+            },
+            "filter": {
+              "description": "Optional. The filter expression for listing sessions based on AIP-160. If not set, only non-archived sessions will be returned. Currently supports filtering by archived. Example filters: - 'archived = false' (default, returns only non-archived sessions) - 'archived = true' (returns only archived sessions) - 'archived = true OR archived = false' (returns all sessions)",
+              "location": "query",
+              "type": "string"
+            }
+          },
+          "response": {
+            "$ref": "ListSessionsResponse"
+          },
+          "id": "jules.sessions.list",
+          "scopes": [
+            "https://www.googleapis.com/auth/cloud-platform"
+          ],
+          "httpMethod": "GET",
+          "description": "Lists all sessions.",
+          "flatPath": "v1alpha/sessions"
+        },
+        "create": {
+          "response": {
+            "$ref": "Session"
+          },
+          "scopes": [
+            "https://www.googleapis.com/auth/cloud-platform"
+          ],
+          "parameters": {},
+          "request": {
+            "$ref": "Session"
+          },
+          "description": "Creates a new session.",
+          "httpMethod": "POST",
+          "flatPath": "v1alpha/sessions",
+          "id": "jules.sessions.create",
+          "parameterOrder": [],
+          "path": "v1alpha/sessions"
+        },
+        "get": {
+          "path": "v1alpha/{+name}",
+          "response": {
+            "$ref": "Session"
+          },
+          "parameters": {
+            "name": {
+              "location": "path",
+              "type": "string",
+              "description": "Required. The resource name of the session to retrieve. Format: sessions/{session}",
+              "pattern": "^sessions/[^/]+$",
+              "required": true
+            }
+          },
+          "id": "jules.sessions.get",
+          "parameterOrder": [
+            "name"
+          ],
+          "scopes": [
+            "https://www.googleapis.com/auth/cloud-platform"
+          ],
+          "httpMethod": "GET",
+          "description": "Gets a single session.",
+          "flatPath": "v1alpha/sessions/{sessionsId}"
+        },
+        "sendMessage": {
+          "request": {
+            "$ref": "SendMessageRequest"
+          },
+          "id": "jules.sessions.sendMessage",
+          "path": "v1alpha/{+session}:sendMessage",
+          "flatPath": "v1alpha/sessions/{sessionsId}:sendMessage",
+          "parameters": {
+            "session": {
+              "location": "path",
+              "description": "Required. The resource name of the session to post the message to. Format: sessions/{session}",
+              "required": true,
+              "type": "string",
+              "pattern": "^sessions/[^/]+$"
+            }
+          },
+          "description": "Sends a message from the user to a session.",
+          "scopes": [
+            "https://www.googleapis.com/auth/cloud-platform"
+          ],
+          "response": {
+            "$ref": "SendMessageResponse"
+          },
+          "parameterOrder": [
+            "session"
+          ],
+          "httpMethod": "POST"
+        },
+        "archive": {
+          "scopes": [
+            "https://www.googleapis.com/auth/cloud-platform"
+          ],
+          "path": "v1alpha/{+name}:archive",
+          "description": "Archives a session.",
+          "flatPath": "v1alpha/sessions/{sessionsId}:archive",
+          "id": "jules.sessions.archive",
+          "request": {
+            "$ref": "ArchiveSessionRequest"
+          },
+          "parameters": {
+            "name": {
+              "type": "string",
+              "required": true,
+              "location": "path",
+              "pattern": "^sessions/[^/]+$",
+              "description": "Required. The resource name of the session to archive. Format: sessions/{session}"
+            }
+          },
+          "response": {
+            "$ref": "Session"
+          },
+          "httpMethod": "POST",
+          "parameterOrder": [
+            "name"
+          ]
+        },
+        "delete": {
+          "response": {
+            "$ref": "Empty"
+          },
+          "parameters": {
+            "name": {
+              "location": "path",
+              "pattern": "^sessions/[^/]+$",
+              "type": "string",
+              "description": "Required. The resource name of the session to delete. Format: sessions/{session}",
+              "required": true
+            }
+          },
+          "scopes": [
+            "https://www.googleapis.com/auth/cloud-platform"
+          ],
+          "flatPath": "v1alpha/sessions/{sessionsId}",
+          "id": "jules.sessions.delete",
+          "description": "Deletes a session.",
+          "path": "v1alpha/{+name}",
+          "parameterOrder": [
+            "name"
+          ],
+          "httpMethod": "DELETE"
+        }
+      }
+    },
+    "sources": {
+      "methods": {
+        "get": {
+          "parameterOrder": [
+            "name"
+          ],
+          "description": "Gets a single source.",
+          "scopes": [
+            "https://www.googleapis.com/auth/cloud-platform"
+          ],
+          "response": {
+            "$ref": "Source"
+          },
+          "parameters": {
+            "name": {
+              "description": "Required. The resource name of the source to retrieve. Format: sources/{source}",
+              "required": true,
+              "pattern": "^sources/.*$",
+              "type": "string",
+              "location": "path"
+            }
+          },
+          "id": "jules.sources.get",
+          "httpMethod": "GET",
+          "flatPath": "v1alpha/sources/{sourcesId}",
+          "path": "v1alpha/{+name}"
+        },
+        "list": {
+          "description": "Lists sources.",
+          "httpMethod": "GET",
+          "flatPath": "v1alpha/sources",
+          "path": "v1alpha/sources",
+          "parameterOrder": [],
+          "parameters": {
+            "pageSize": {
+              "description": "Optional. The number of sources to return. Must be between 1 and 100, inclusive. If unset, defaults to 30. If set to greater than 100, it will be coerced to 100.",
+              "type": "integer",
+              "format": "int32",
+              "location": "query"
+            },
+            "pageToken": {
+              "description": "Optional. A page token, received from a previous `ListSources` call.",
+              "type": "string",
+              "location": "query"
+            },
+            "filter": {
+              "location": "query",
+              "description": "Optional. The filter expression for listing sources, based on AIP-160. If not set, all sources will be returned. Currently only supports filtering by name, which can be used to filter by a single source or multiple sources separated by OR. Example filters: - 'name=sources/source1 OR name=sources/source2'",
+              "type": "string"
+            }
+          },
+          "id": "jules.sources.list",
+          "response": {
+            "$ref": "ListSourcesResponse"
+          },
+          "scopes": [
+            "https://www.googleapis.com/auth/cloud-platform"
+          ]
+        }
+      }
+    }
+  },
+  "basePath": "",
+  "mtlsRootUrl": "https://jules.mtls.googleapis.com/",
+  "ownerDomain": "google.com",
+  "title": "Jules API",
+  "parameters": {
+    "uploadType": {
+      "location": "query",
+      "type": "string",
+      "description": "Legacy upload protocol for media (e.g. \"media\", \"multipart\")."
+    },
+    "$.xgafv": {
+      "location": "query",
+      "enum": [
+        "1",
+        "2"
+      ],
+      "description": "V1 error format.",
+      "type": "string",
+      "enumDescriptions": [
+        "v1 error format",
+        "v2 error format"
+      ]
+    },
+    "prettyPrint": {
+      "type": "boolean",
+      "description": "Returns response with indentations and line breaks.",
+      "location": "query",
+      "default": "true"
+    },
+    "oauth_token": {
+      "location": "query",
+      "description": "OAuth 2.0 token for the current user.",
+      "type": "string"
+    },
+    "callback": {
+      "description": "JSONP",
+      "type": "string",
+      "location": "query"
+    },
+    "key": {
+      "type": "string",
+      "location": "query",
+      "description": "API key. Your API key identifies your project and provides you with API access, quota, and reports. Required unless you provide an OAuth 2.0 token."
+    },
+    "alt": {
+      "enum": [
+        "json",
+        "media",
+        "proto"
+      ],
+      "type": "string",
+      "default": "json",
+      "enumDescriptions": [
+        "Responses with Content-Type of application/json",
+        "Media download with context-dependent Content-Type",
+        "Responses with Content-Type of application/x-protobuf"
+      ],
+      "description": "Data format for response.",
+      "location": "query"
+    },
+    "upload_protocol": {
+      "description": "Upload protocol for media (e.g. \"raw\", \"multipart\").",
+      "location": "query",
+      "type": "string"
+    },
+    "fields": {
+      "type": "string",
+      "location": "query",
+      "description": "Selector specifying which fields to include in a partial response."
+    },
+    "quotaUser": {
+      "type": "string",
+      "description": "Available to use for quota purposes for server-side applications. Can be any arbitrary string assigned to a user, but should not exceed 40 characters.",
+      "location": "query"
+    },
+    "access_token": {
+      "description": "OAuth access token.",
+      "type": "string",
+      "location": "query"
+    }
+  },
+  "servicePath": "",
+  "protocol": "rest"
+}
