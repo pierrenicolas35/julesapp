@@ -1,4 +1,4 @@
-const CACHE_NAME = 'jules-pwa-v4';
+const CACHE_NAME = 'jules-pwa-v5';
 const ASSETS_TO_CACHE = [
     './',
     'index.html',
@@ -61,6 +61,13 @@ self.addEventListener('fetch', event => {
                 });
             })
     );
+});
+
+// Écouteur pour écouter les messages venant de l'app (ex: forcer le skipWaiting)
+self.addEventListener('message', (event) => {
+    if (event.data && event.data.type === 'SKIP_WAITING') {
+        self.skipWaiting();
+    }
 });
 
 // Écouteur pour interagir avec les notifications

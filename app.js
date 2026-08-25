@@ -47,7 +47,11 @@ const elements = {
     inputApiKey: document.getElementById('input-api-key'),
     inputDefaultRepo: document.getElementById('input-default-repo'),
     settingsMessage: document.getElementById('settings-message'),
-    btnEnableNotifications: document.getElementById('btn-enable-notifications')
+    btnEnableNotifications: document.getElementById('btn-enable-notifications'),
+
+    // Update
+    updateToast: document.getElementById('update-toast'),
+    btnUpdateReload: document.getElementById('btn-update-reload')
 };
 
 // --- INIT ---
@@ -428,8 +432,8 @@ function renderSessionsList() {
 
     for (const repo in grouped) {
         const parts = repo.split('/');
-        const repoName = parts.length > 1 ? parts.slice(-2).join('/') : repo;
-        html += `<h3 style="margin: 16px 0 8px 0; font-size: 20px; font-weight: bold; color: var(--md-sys-color-primary);">${repoName}</h3>`;
+        const repoName = parts.length > 1 ? parts.pop() : repo;
+        html += `<h3 style="margin: 24px 0 12px 0; font-size: 24px; font-weight: 800; color: var(--md-sys-color-primary);">${repoName}</h3>`;
 
         html += grouped[repo].map(s => {
             const name = s.name || s.id || 'Session Inconnue';
@@ -641,28 +645,30 @@ function renderStepper(session, activitiesData) {
             let author = 'system'; // 'user', 'jules', 'system'
             let content = '';
 
+            // System vs Chat messages logic
             if (act.type === 'USER_MESSAGE' || (act.payload && act.payload.userMessage)) {
                 author = 'user';
                 content = act.message || (act.payload ? act.payload.userMessage : '') || act.description;
             } else if (act.type === 'AGENT_MESSAGE' || (act.payload && act.payload.agentMessage)) {
                 author = 'jules';
                 content = act.message || (act.payload ? act.payload.agentMessage : '') || act.description;
-            } else if (act.message) {
-                // Fallback pour les réponses de Jules qui n'ont pas de type explicite
+            } else if (act.message && typeof act.message === 'string') {
+                // Fallback pour les réponses de Jules qui n'ont pas de type explicite, s'il y a un message texte clair
                 author = 'jules';
                 content = act.message;
             } else {
-                // Message système pour les étapes importantes
+                // Message système
                 const title = act.type || act.name || 'Activité';
 
-                // Masquer les lignes purement techniques (ex: nom de ressource de l'API)
-                if (title.includes('sessions/') && title.includes('activities/')) {
-                    return '';
+                // Ne garder que les messages système whitelistés pour éviter les "lignes qui ne servent à rien"
+                const allowedSystemTypes = ['PLAN_CREATED', 'PR_CREATED', 'CODE_REVIEW_REQUESTED', 'CODE_REVIEW_COMPLETED', 'EXECUTION_STARTED'];
+                const isAllowed = allowedSystemTypes.some(type => title.includes(type));
+
+                if (!isAllowed) {
+                    return ''; // Ignorer ce message
                 }
 
-                // Masquer les types peu intelligibles ou trop verbeux si besoin, on garde l'essentiel
                 const translatedTitle = translateSystemActivity(title);
-
                 const sysClass = actStatus === 'FAILED' ? 'error' : actStatus === 'COMPLETED' ? 'success' : '';
                 return `<div class="chat-system ${sysClass}">${translatedTitle} ${actStatus === 'FAILED' ? '❌' : '✓'}</div>`;
             }
@@ -811,10 +817,36 @@ function sendNotification(title, body) {
 }
 
 // --- SERVICE WORKER REGISTRATION ---
+let newWorker;
 if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
-        navigator.serviceWorker.register('sw.js')
-            .then(reg => console.log('Service Worker enregistré', reg.scope))
-            .catch(err => console.warn('Erreur SW:', err));
+        navigator.serviceWorker.register('sw.js').then(reg => {
+            console.log('Service Worker enregistré', reg.scope);
+
+            reg.addEventListener('updatefound', () => {
+                newWorker = reg.installing;
+                newWorker.addEventListener('statechange', () => {
+                    if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                        // Nouvelle version disponible
+                        elements.updateToast.classList.remove('hidden');
+                    }
+                });
+            });
+        }).catch(err => console.warn('Erreur SW:', err));
+
+        let refreshing;
+        navigator.serviceWorker.addEventListener('controllerchange', () => {
+            if (refreshing) return;
+            window.location.reload();
+            refreshing = true;
+        });
+    });
+}
+
+if (elements.btnUpdateReload) {
+    elements.btnUpdateReload.addEventListener('click', () => {
+        if (newWorker) {
+            newWorker.postMessage({ type: 'SKIP_WAITING' });
+        }
     });
 }
