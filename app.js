@@ -387,7 +387,9 @@ function renderSessionsList() {
     let html = '';
 
     for (const repo in grouped) {
-        html += `<h3 style="margin: 16px 0 8px 0; font-size: 14px; color: var(--md-sys-color-primary);">${repo}</h3>`;
+        const parts = repo.split('/');
+        const repoName = parts.length > 1 ? parts.slice(-2).join('/') : repo;
+        html += `<h3 style="margin: 16px 0 8px 0; font-size: 20px; font-weight: bold; color: var(--md-sys-color-primary);">${repoName}</h3>`;
 
         html += grouped[repo].map(s => {
             const name = s.name || s.id || 'Session Inconnue';
@@ -605,18 +607,25 @@ function renderStepper(session, activitiesData) {
             } else if (act.type === 'AGENT_MESSAGE' || (act.payload && act.payload.agentMessage)) {
                 author = 'jules';
                 content = act.message || (act.payload ? act.payload.agentMessage : '') || act.description;
+            } else if (act.message) {
+                // Fallback pour les réponses de Jules qui n'ont pas de type explicite
+                author = 'jules';
+                content = act.message;
             } else {
                 // Message système pour les autres étapes techniques
                 const title = act.type || act.name || 'Activité';
+
+                // Masquer les lignes inutiles qui n'affichent que le chemin de la ressource
+                if (title.includes('sessions/') && title.includes('activities/')) {
+                    return '';
+                }
+
                 const sysClass = actStatus === 'FAILED' ? 'error' : actStatus === 'COMPLETED' ? 'success' : '';
                 return `<div class="chat-system ${sysClass}">${title.replace(/_/g, ' ')} ${actStatus === 'FAILED' ? '❌' : '✓'}</div>`;
             }
 
             if (!content) {
-                // Si on n'arrive pas à extraire proprement, on convertit le payload en texte de secours
-                content = typeof act === 'object' ? JSON.stringify(act) : String(act);
-                author = 'system'; // Forcer en system si c'est du JSON illisible
-                return `<div class="chat-system">Détails d'activité (JSON) masqués pour lisibilité</div>`;
+                return '';
             }
 
             const parsedContent = parseMessageContent(content);
