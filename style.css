@@ -466,3 +466,10 @@ button {
     color: var(--md-sys-color-on-surface-variant);
     padding: 40px 20px;
 }
+
+.btn-icon {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    color: var(--md-sys-color-on-primary);
+}

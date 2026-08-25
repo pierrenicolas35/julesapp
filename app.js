@@ -26,7 +26,7 @@ const elements = {
     formSessionChat: document.getElementById('form-session-chat'),
     inputSessionMessage: document.getElementById('input-session-message'),
     btnSendMessage: document.getElementById('btn-send-message'),
-    btnSendMessageText: document.querySelector('#btn-send-message .btn-text'),
+    btnSendMessageText: document.querySelector('#btn-send-message .btn-icon'),
     btnSendMessageSpinner: document.querySelector('#btn-send-message .spinner'),
 
     // New Session View
@@ -327,8 +327,22 @@ async function fetchSessions() {
     if (!state.apiKey) return;
 
     try {
-        const data = await fetchApi('/sessions');
+        // Ajouter page_size=20 par défaut si l'API le supporte pour limiter la taille de la réponse
+        // Si pageSize n'est pas supporté par l'API alpha, l'alternative est de faire un tri et de limiter côté client.
+        // On modifie l'URL si on le peut.
+        const data = await fetchApi('/sessions?pageSize=20');
         state.sessions = data.sessions || [];
+
+        // Trier les sessions par date de création décroissante (si 'createTime' existe) et limiter aux 20 plus récentes
+        state.sessions.sort((a, b) => {
+            const timeA = new Date(a.createTime || 0).getTime();
+            const timeB = new Date(b.createTime || 0).getTime();
+            return timeB - timeA;
+        });
+
+        // Limiter le nombre de sessions affichées pour accélérer le rendu du DOM
+        state.sessions = state.sessions.slice(0, 20);
+
         renderSessionsList();
     } catch (error) {
         console.error("Erreur lors du chargement des sessions:", error);
@@ -362,6 +376,32 @@ function showSessionsList() {
     state.currentSessionId = null;
 }
 
+
+function translateStatus(status) {
+    const map = {
+        'PENDING': 'En attente',
+        'PLANNING': 'Planification',
+        'IN_PROGRESS': 'En cours',
+        'AWAITING_USER_INPUT': 'En attente de réponse',
+        'COMPLETED': 'Terminé',
+        'FAILED': 'Échoué',
+        'CANCELLED': 'Annulé'
+    };
+    return map[status] || status;
+}
+
+function translateSystemActivity(type) {
+    const map = {
+        'PLAN_CREATED': 'Plan créé',
+        'PLANNING_STARTED': 'Planification en cours',
+        'EXECUTION_STARTED': 'Exécution commencée',
+        'PR_CREATED': 'Pull Request créée',
+        'CODE_REVIEW_REQUESTED': 'Revue de code demandée',
+        'CODE_REVIEW_COMPLETED': 'Revue de code terminée'
+    };
+    return map[type] || type.replace(/_/g, ' ');
+}
+
 function getStatusClass(status) {
     const s = (status || '').toLowerCase();
     if (['pending', 'planning', 'in_progress', 'awaiting_input'].includes(s)) return s;
@@ -387,7 +427,9 @@ function renderSessionsList() {
     let html = '';
 
     for (const repo in grouped) {
-        html += `<h3 style="margin: 16px 0 8px 0; font-size: 14px; color: var(--md-sys-color-primary);">${repo}</h3>`;
+        const parts = repo.split('/');
+        const repoName = parts.length > 1 ? parts.slice(-2).join('/') : repo;
+        html += `<h3 style="margin: 16px 0 8px 0; font-size: 20px; font-weight: bold; color: var(--md-sys-color-primary);">${repoName}</h3>`;
 
         html += grouped[repo].map(s => {
             const name = s.name || s.id || 'Session Inconnue';
@@ -573,7 +615,7 @@ function hasPlan(activities) {
 
 function renderStepper(session, activitiesData) {
     const status = session.state || session.status || 'UNKNOWN';
-    elements.detailSessionStatus.textContent = status;
+    elements.detailSessionStatus.textContent = translateStatus(status);
     elements.detailSessionStatus.className = `chip ${getStatusClass(status)}`;
 
     const activities = activitiesData.activities || [];
@@ -605,18 +647,28 @@ function renderStepper(session, activitiesData) {
             } else if (act.type === 'AGENT_MESSAGE' || (act.payload && act.payload.agentMessage)) {
                 author = 'jules';
                 content = act.message || (act.payload ? act.payload.agentMessage : '') || act.description;
+            } else if (act.message) {
+                // Fallback pour les réponses de Jules qui n'ont pas de type explicite
+                author = 'jules';
+                content = act.message;
             } else {
-                // Message système pour les autres étapes techniques
+                // Message système pour les étapes importantes
                 const title = act.type || act.name || 'Activité';
+
+                // Masquer les lignes purement techniques (ex: nom de ressource de l'API)
+                if (title.includes('sessions/') && title.includes('activities/')) {
+                    return '';
+                }
+
+                // Masquer les types peu intelligibles ou trop verbeux si besoin, on garde l'essentiel
+                const translatedTitle = translateSystemActivity(title);
+
                 const sysClass = actStatus === 'FAILED' ? 'error' : actStatus === 'COMPLETED' ? 'success' : '';
-                return `<div class="chat-system ${sysClass}">${title.replace(/_/g, ' ')} ${actStatus === 'FAILED' ? '❌' : '✓'}</div>`;
+                return `<div class="chat-system ${sysClass}">${translatedTitle} ${actStatus === 'FAILED' ? '❌' : '✓'}</div>`;
             }
 
             if (!content) {
-                // Si on n'arrive pas à extraire proprement, on convertit le payload en texte de secours
-                content = typeof act === 'object' ? JSON.stringify(act) : String(act);
-                author = 'system'; // Forcer en system si c'est du JSON illisible
-                return `<div class="chat-system">Détails d'activité (JSON) masqués pour lisibilité</div>`;
+                return '';
             }
 
             const parsedContent = parseMessageContent(content);
@@ -668,10 +720,19 @@ function checkStateChanges(sessionInfo, activitiesData) {
     const isFinished = ['COMPLETED', 'FAILED', 'CANCELLED'].includes(currentState);
     const stateChanged = currentState !== previousSessionState.state;
 
-    if (isPlanReady) sendNotification("Plan prêt", "Jules a terminé la planification et commencé l'exécution.");
-    if (isPrOpened) sendNotification("Pull Request ouverte !", "La solution est prête à être reviewée.");
-    if (stateChanged && isFinished) {
-        sendNotification(`Session ${currentState}`, `La tâche s'est terminée avec le statut : ${currentState}`);
+    // Nom de la session (titre)
+    const sessionTitle = sessionInfo.prompt || (sessionInfo.input && sessionInfo.input.prompt) || `Session ${sessionInfo.id || ''}`;
+    // Tronquer le titre s'il est trop long
+    const shortTitle = sessionTitle.length > 50 ? sessionTitle.substring(0, 47) + '...' : sessionTitle;
+    const translatedStatus = translateStatus(currentState);
+
+    // Notification à chaque changement de statut
+    if (stateChanged) {
+        sendNotification(shortTitle, `Statut : ${translatedStatus}`);
+    } else {
+        // Notifications spécifiques si le statut n'a pas changé mais qu'une étape clé est atteinte
+        if (isPlanReady) sendNotification(shortTitle, "Plan prêt et exécution commencée.");
+        if (isPrOpened) sendNotification(shortTitle, "Pull Request ouverte !");
     }
 
     // Mettre à jour état précédent

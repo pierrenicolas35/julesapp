@@ -37,8 +37,10 @@
                 <div class="chat-input-container" style="padding: 10px; background: var(--md-sys-color-surface); border-top: 1px solid var(--md-sys-color-outline-variant);">
                     <form id="form-session-chat" style="display: flex; gap: 8px;">
                         <input type="text" id="input-session-message" aria-label="Message pour continuer la session" placeholder="Envoyer un message à Jules..." required style="flex: 1; padding: 12px; border: 1px solid #CAC4D0; border-radius: 24px; outline: none;">
-                        <button type="submit" class="btn-primary" id="btn-send-message" style="border-radius: 24px; padding: 10px 20px;">
-                            <span class="btn-text">Envoyer</span>
+                        <button type="submit" class="btn-primary" id="btn-send-message" style="border-radius: 50%; width: 48px; height: 48px; padding: 0; display: flex; justify-content: center; align-items: center;" aria-label="Envoyer">
+                            <span class="btn-icon" style="display: flex; justify-content: center; align-items: center; padding: 0;">
+                                <svg aria-hidden="true" viewBox="0 0 24 24" width="24" height="24"><path fill="currentColor" d="M2,21L23,12L2,3V10L17,12L2,14V21Z"/></svg>
+                            </span>
                             <span class="spinner hidden" style="width: 16px; height: 16px;"></span>
                         </button>
                     </form>
