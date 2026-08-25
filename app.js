@@ -555,24 +555,24 @@ function sendNotification(title, body) {
         navigator.serviceWorker.ready.then(registration => {
             registration.showNotification(title, {
                 body: body,
-                icon: '/icons/icon-192x192.png',
-                badge: '/icons/icon-192x192.png',
+                icon: 'icons/icon-192x192.png',
+                badge: 'icons/icon-192x192.png',
                 vibrate: [200, 100, 200],
                 tag: 'jules-update'
             });
         }).catch(err => {
             // Fallback sur l'API Web Notification classique si SW non prêt
-            new Notification(title, { body, icon: '/icons/icon-192x192.png' });
+            new Notification(title, { body, icon: 'icons/icon-192x192.png' });
         });
     } else {
-        new Notification(title, { body, icon: '/icons/icon-192x192.png' });
+        new Notification(title, { body, icon: 'icons/icon-192x192.png' });
     }
 }
 
 // --- SERVICE WORKER REGISTRATION ---
 if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
-        navigator.serviceWorker.register('/sw.js')
+        navigator.serviceWorker.register('sw.js')
             .then(reg => console.log('Service Worker enregistré', reg.scope))
             .catch(err => console.warn('Erreur SW:', err));
     });
