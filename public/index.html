@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#6750A4" media="(prefers-color-scheme: light)">
+    <meta name="theme-color" content="#21005D" media="(prefers-color-scheme: dark)">
+    <title>Jules API Client</title>
+    <link rel="manifest" href="/manifest.json">
+    <link rel="stylesheet" href="/style.css">
+    <link rel="icon" type="image/png" href="/icons/icon-192x192.png">
+    <link rel="apple-touch-icon" href="/icons/icon-192x192.png">
+</head>
+<body>
+    <header class="top-app-bar">
+        <h1 id="app-title">Sessions</h1>
+    </header>
+
+    <main id="main-content">
+        <!-- VUE: Sessions -->
+        <section id="view-sessions" class="view active">
+            <div id="sessions-list" class="list-container">
+                <p class="empty-state">Aucune session pour le moment.</p>
+            </div>
+
+            <!-- Détail de session (Stepper) -->
+            <div id="session-detail" class="hidden">
+                <button id="btn-back-sessions" class="btn-text">← Retour aux sessions</button>
+                <div class="session-info">
+                    <h2 id="detail-session-id">Session</h2>
+                    <span id="detail-session-status" class="chip"></span>
+                </div>
+                <div id="stepper-container" class="stepper">
+                    <!-- Les étapes du plan viendront ici -->
+                </div>
+            </div>
+        </section>
+
+        <!-- VUE: Nouvelle Session -->
+        <section id="view-new" class="view">
+            <form id="form-new-session" class="form-container">
+                <div class="form-group">
+                    <label for="input-repo">Dépôt (Source / Repo ID)</label>
+                    <input type="text" id="input-repo" required placeholder="ex: mon-organisation/mon-repo">
+                </div>
+                <div class="form-group">
+                    <label for="input-prompt">Prompt</label>
+                    <textarea id="input-prompt" rows="5" required placeholder="Que voulez-vous que Jules fasse ?"></textarea>
+                </div>
+                <button type="submit" class="btn-primary" id="btn-submit-session">
+                    <span class="btn-text">Initier la session</span>
+                    <span class="spinner hidden"></span>
+                </button>
+            </form>
+        </section>
+
+        <!-- VUE: Paramètres -->
+        <section id="view-settings" class="view">
+            <form id="form-settings" class="form-container">
+                <div class="form-group">
+                    <label for="input-api-url">URL de l'API Jules</label>
+                    <input type="url" id="input-api-url" value="https://jules.googleapis.com/v1alpha" required>
+                </div>
+                <div class="form-group">
+                    <label for="input-api-key">Clé d'API Jules</label>
+                    <input type="password" id="input-api-key" placeholder="Votre clé secrète" required>
+                </div>
+                <div class="form-group">
+                    <label for="input-default-repo">Dépôt par défaut</label>
+                    <input type="text" id="input-default-repo" placeholder="ex: mon-organisation/mon-repo">
+                </div>
+                <button type="submit" class="btn-primary">Enregistrer</button>
+                <p id="settings-message" class="message hidden"></p>
+
+                <div class="settings-actions">
+                    <button type="button" id="btn-enable-notifications" class="btn-secondary">Activer les notifications</button>
+                </div>
+            </form>
+        </section>
+    </main>
+
+    <!-- Barre de navigation inférieure -->
+    <nav class="bottom-nav">
+        <button class="nav-item active" data-target="view-sessions">
+            <svg viewBox="0 0 24 24" class="nav-icon"><path fill="currentColor" d="M13,3V9H21V3M13,21H21V11H13M3,21H11V15H3M3,13H11V3H3V13Z"/></svg>
+            <span>Sessions</span>
+        </button>
+        <button class="nav-item" data-target="view-new">
+            <svg viewBox="0 0 24 24" class="nav-icon"><path fill="currentColor" d="M19,13H13V19H11V13H5V11H11V5H13V11H19V13Z"/></svg>
+            <span>Nouvelle</span>
+        </button>
+        <button class="nav-item" data-target="view-settings">
+            <svg viewBox="0 0 24 24" class="nav-icon"><path fill="currentColor" d="M12,15.5A3.5,3.5 0 0,1 8.5,12A3.5,3.5 0 0,1 12,8.5A3.5,3.5 0 0,1 15.5,12A3.5,3.5 0 0,1 12,15.5M19.43,12.97C19.47,12.65 19.5,12.33 19.5,12C19.5,11.67 19.47,11.34 19.43,11L21.54,9.37C21.73,9.22 21.78,8.95 21.66,8.73L19.66,5.27C19.54,5.05 19.27,4.96 19.05,5.05L16.56,6.05C16.04,5.66 15.5,5.32 14.87,5.07L14.5,2.42C14.46,2.18 14.25,2 14,2H10C9.75,2 9.54,2.18 9.5,2.42L9.13,5.07C8.5,5.32 7.96,5.66 7.44,6.05L4.95,5.05C4.73,4.96 4.46,5.05 4.34,5.27L2.34,8.73C2.21,8.95 2.27,9.22 2.46,9.37L4.57,11C4.53,11.34 4.5,11.67 4.5,12C4.5,12.33 4.53,12.65 4.57,12.97L2.46,14.63C2.27,14.78 2.21,15.05 2.34,15.27L4.34,18.73C4.46,18.95 4.73,19.03 4.95,18.95L7.44,17.94C7.96,18.34 8.5,18.68 9.13,18.93L9.5,21.58C9.54,21.82 9.75,22 10,22H14C14.25,22 14.46,21.82 14.5,21.58L14.87,18.93C15.5,18.68 16.04,18.34 16.56,17.94L19.05,18.95C19.27,19.03 19.54,18.95 19.66,18.73L21.66,15.27C21.78,15.05 21.73,14.78 21.54,14.63L19.43,12.97Z"/></svg>
+            <span>Paramètres</span>
+        </button>
+    </nav>
+
+    <script src="/app.js" type="module"></script>
+</body>
+</html>
