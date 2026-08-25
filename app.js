@@ -387,7 +387,8 @@ function renderSessionsList() {
     let html = '';
 
     for (const repo in grouped) {
-        const repoName = repo.split('/').pop();
+        const parts = repo.split('/');
+        const repoName = parts.length > 1 ? parts.slice(-2).join('/') : repo;
         html += `<h3 style="margin: 16px 0 8px 0; font-size: 20px; font-weight: bold; color: var(--md-sys-color-primary);">${repoName}</h3>`;
 
         html += grouped[repo].map(s => {
