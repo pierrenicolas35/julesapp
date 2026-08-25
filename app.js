@@ -22,10 +22,17 @@ const elements = {
     detailSessionStatus: document.getElementById('detail-session-status'),
     stepperContainer: document.getElementById('stepper-container'),
 
+    // Chat Form
+    formSessionChat: document.getElementById('form-session-chat'),
+    inputSessionMessage: document.getElementById('input-session-message'),
+    btnSendMessage: document.getElementById('btn-send-message'),
+    btnSendMessageText: document.querySelector('#btn-send-message .btn-text'),
+    btnSendMessageSpinner: document.querySelector('#btn-send-message .spinner'),
+
     // New Session View
     formNewSession: document.getElementById('form-new-session'),
     inputRepo: document.getElementById('input-repo'),
-    repoList: document.getElementById('repo-list'),
+    inputBranch: document.getElementById('input-branch'),
     inputPrompt: document.getElementById('input-prompt'),
     inputPlanApproval: document.getElementById('input-plan-approval'),
     inputAutomationMode: document.getElementById('input-automation-mode'),
@@ -139,6 +146,35 @@ function setupForms() {
         fetchSources(); // Rafraîchir les sources
     });
 
+    if (elements.formSessionChat) {
+        elements.formSessionChat.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            if (!state.currentSessionId) return;
+
+            const message = elements.inputSessionMessage.value.trim();
+            if (!message) return;
+
+            // UI loading state
+            elements.btnSendMessage.disabled = true;
+            elements.btnSendMessageText.classList.add('hidden');
+            elements.btnSendMessageSpinner.classList.remove('hidden');
+
+            try {
+                await sendMessageToSession(state.currentSessionId, message);
+                elements.inputSessionMessage.value = ''; // Clear input
+
+                // Immediately refresh session details
+                updateSessionDetail();
+            } catch (error) {
+                alert("Erreur lors de l'envoi du message : " + error.message);
+            } finally {
+                elements.btnSendMessage.disabled = false;
+                elements.btnSendMessageText.classList.remove('hidden');
+                elements.btnSendMessageSpinner.classList.add('hidden');
+            }
+        });
+    }
+
     // Handle image paste in prompt
     elements.inputPrompt.addEventListener('paste', (e) => {
         const items = (e.clipboardData || e.originalEvent.clipboardData).items;
@@ -165,15 +201,17 @@ function setupForms() {
         }
 
         const repo = elements.inputRepo.value.trim();
+        const branch = elements.inputBranch.value.trim();
         const prompt = elements.inputPrompt.value.trim();
-        const requirePlanApproval = elements.inputPlanApproval.checked;
+        const requirePlanApproval = elements.inputPlanApproval.value === "true";
         const automationMode = elements.inputAutomationMode.value;
 
         setLoadingState(true);
         try {
-            const session = await createSession(repo, prompt, requirePlanApproval, automationMode);
+            const session = await createSession(repo, branch, prompt, requirePlanApproval, automationMode);
             elements.inputPrompt.value = ''; // Reset prompt
-            elements.inputPlanApproval.checked = false; // Reset plan approval
+            elements.inputBranch.value = ''; // Reset branch
+            elements.inputPlanApproval.value = "false"; // Reset plan approval
             elements.inputAutomationMode.value = 'AUTOMATION_MODE_UNSPECIFIED'; // Reset automation mode
 
             // Switch to sessions view and open detail
@@ -233,10 +271,15 @@ async function fetchApi(endpoint, options = {}) {
     return text ? JSON.parse(text) : null;
 }
 
-async function createSession(repo, prompt, requirePlanApproval, automationMode) {
+async function createSession(repo, branch, prompt, requirePlanApproval, automationMode) {
+    const sourceContext = { source: repo };
+    if (branch) {
+        sourceContext.branch = branch;
+    }
+
     const payload = {
         prompt: prompt,
-        sourceContext: { source: repo },
+        sourceContext: sourceContext,
         requirePlanApproval: requirePlanApproval,
         automationMode: automationMode
     };
@@ -253,11 +296,17 @@ async function fetchSources() {
 
     try {
         const data = await fetchApi('/sources');
-        if (data && data.sources && elements.repoList) {
-            elements.repoList.innerHTML = data.sources.map(source => {
+        if (data && data.sources && elements.inputRepo) {
+            elements.inputRepo.innerHTML = data.sources.map(source => {
                 const label = source.githubRepo ? `${source.githubRepo.owner}/${source.githubRepo.repo}` : source.name;
-                return `<option value="${source.name}">${label}</option>`;
+                const isSelected = source.name === state.defaultRepo ? 'selected' : '';
+                return `<option value="${source.name}" ${isSelected}>${label}</option>`;
             }).join('');
+
+            // If default repo wasn't in the list but exists, add it
+            if (state.defaultRepo && !data.sources.some(s => s.name === state.defaultRepo)) {
+                elements.inputRepo.innerHTML += `<option value="${state.defaultRepo}" selected>${state.defaultRepo}</option>`;
+            }
         }
     } catch (error) {
         console.error("Erreur lors du chargement des sources:", error);
@@ -281,6 +330,14 @@ async function fetchSessionActivities(sessionId) {
     // Remplacer / par %2F si sessionId contient le chemin complet comme 'sessions/123'
     const id = sessionId.startsWith('sessions/') ? sessionId.replace('sessions/', '') : sessionId;
     return fetchApi(`/sessions/${id}/activities`);
+}
+
+async function sendMessageToSession(sessionId, message) {
+    const id = sessionId.startsWith('sessions/') ? sessionId.replace('sessions/', '') : sessionId;
+    return fetchApi(`/sessions/${id}:sendMessage`, {
+        method: 'POST',
+        body: JSON.stringify({ message: message })
+    });
 }
 
 async function fetchSessionInfo(sessionId) {
