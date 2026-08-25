@@ -297,15 +297,25 @@ async function fetchSources() {
     try {
         const data = await fetchApi('/sources');
         if (data && data.sources && elements.inputRepo) {
-            elements.inputRepo.innerHTML = data.sources.map(source => {
+            elements.inputRepo.innerHTML = '';
+            data.sources.forEach(source => {
                 const label = source.githubRepo ? `${source.githubRepo.owner}/${source.githubRepo.repo}` : source.name;
-                const isSelected = source.name === state.defaultRepo ? 'selected' : '';
-                return `<option value="${source.name}" ${isSelected}>${label}</option>`;
-            }).join('');
+                const option = document.createElement('option');
+                option.value = source.name;
+                option.textContent = label;
+                if (source.name === state.defaultRepo) {
+                    option.selected = true;
+                }
+                elements.inputRepo.appendChild(option);
+            });
 
             // If default repo wasn't in the list but exists, add it
             if (state.defaultRepo && !data.sources.some(s => s.name === state.defaultRepo)) {
-                elements.inputRepo.innerHTML += `<option value="${state.defaultRepo}" selected>${state.defaultRepo}</option>`;
+                const option = document.createElement('option');
+                option.value = state.defaultRepo;
+                option.textContent = state.defaultRepo;
+                option.selected = true;
+                elements.inputRepo.appendChild(option);
             }
         }
     } catch (error) {
