@@ -430,6 +430,29 @@ button {
     color: var(--md-sys-color-error);
 }
 
+/* Update Toast */
+.update-toast {
+    position: fixed;
+    bottom: calc(var(--nav-height) + 16px);
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: var(--md-sys-color-on-surface);
+    color: var(--md-sys-color-surface);
+    padding: 12px 24px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+    z-index: 1000;
+    animation: slideUp 0.3s ease-out;
+}
+
+@keyframes slideUp {
+    from { transform: translate(-50%, 100%); opacity: 0; }
+    to { transform: translate(-50%, 0); opacity: 1; }
+}
+
 /* Spinner */
 .spinner {
     border: 2px solid rgba(255, 255, 255, 0.3);
@@ -472,4 +495,10 @@ button {
     justify-content: center;
     align-items: center;
     color: var(--md-sys-color-on-primary);
+}
+
+.btn-icon svg {
+    width: 24px;
+    height: 24px;
+    fill: currentColor;
 }
