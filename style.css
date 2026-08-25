@@ -128,6 +128,21 @@ input:focus, textarea:focus {
     border-color: transparent;
 }
 
+/* Theme Toggle Group */
+.theme-toggle-group {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background-color: var(--md-sys-color-surface-variant);
+    padding: 16px;
+    border-radius: 8px;
+    flex-direction: row !important; /* override form-group */
+}
+
+.theme-toggle-label {
+    margin-bottom: 0;
+}
+
 /* Toggle Switch */
 .switch {
   position: relative;
