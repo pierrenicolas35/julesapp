@@ -25,7 +25,10 @@ const elements = {
     // New Session View
     formNewSession: document.getElementById('form-new-session'),
     inputRepo: document.getElementById('input-repo'),
+    repoList: document.getElementById('repo-list'),
     inputPrompt: document.getElementById('input-prompt'),
+    inputPlanApproval: document.getElementById('input-plan-approval'),
+    inputAutomationMode: document.getElementById('input-automation-mode'),
     btnSubmitSession: document.getElementById('btn-submit-session'),
     btnSubmitText: document.querySelector('#btn-submit-session .btn-text'),
     btnSubmitSpinner: document.querySelector('#btn-submit-session .spinner'),
@@ -67,6 +70,7 @@ function init() {
         showSettingsMessage('Veuillez configurer votre clé API pour commencer.', true);
     } else {
         fetchSessions();
+        fetchSources();
     }
 }
 
@@ -132,6 +136,24 @@ function setupForms() {
 
         showSettingsMessage('Paramètres sauvegardés avec succès !');
         fetchSessions(); // Rafraîchir les sessions avec la nouvelle clé
+        fetchSources(); // Rafraîchir les sources
+    });
+
+    // Handle image paste in prompt
+    elements.inputPrompt.addEventListener('paste', (e) => {
+        const items = (e.clipboardData || e.originalEvent.clipboardData).items;
+        for (const item of items) {
+            if (item.type.indexOf('image') === 0) {
+                const blob = item.getAsFile();
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    const base64Data = event.target.result;
+                    // Append markdown image to prompt
+                    elements.inputPrompt.value += `\n\n![Pasted Image](${base64Data})`;
+                };
+                reader.readAsDataURL(blob);
+            }
+        }
     });
 
     elements.formNewSession.addEventListener('submit', async (e) => {
@@ -144,11 +166,15 @@ function setupForms() {
 
         const repo = elements.inputRepo.value.trim();
         const prompt = elements.inputPrompt.value.trim();
+        const requirePlanApproval = elements.inputPlanApproval.checked;
+        const automationMode = elements.inputAutomationMode.value;
 
         setLoadingState(true);
         try {
-            const session = await createSession(repo, prompt);
+            const session = await createSession(repo, prompt, requirePlanApproval, automationMode);
             elements.inputPrompt.value = ''; // Reset prompt
+            elements.inputPlanApproval.checked = false; // Reset plan approval
+            elements.inputAutomationMode.value = 'AUTOMATION_MODE_UNSPECIFIED'; // Reset automation mode
 
             // Switch to sessions view and open detail
             switchView('view-sessions', 'Sessions');
@@ -207,12 +233,12 @@ async function fetchApi(endpoint, options = {}) {
     return text ? JSON.parse(text) : null;
 }
 
-async function createSession(repo, prompt) {
+async function createSession(repo, prompt, requirePlanApproval, automationMode) {
     const payload = {
-        input: {
-            source_repository: repo,
-            prompt: prompt
-        }
+        prompt: prompt,
+        sourceContext: { source: repo },
+        requirePlanApproval: requirePlanApproval,
+        automationMode: automationMode
     };
 
     // Selon la documentation habituelle, POST /sessions
@@ -220,6 +246,22 @@ async function createSession(repo, prompt) {
         method: 'POST',
         body: JSON.stringify(payload)
     });
+}
+
+async function fetchSources() {
+    if (!state.apiKey) return;
+
+    try {
+        const data = await fetchApi('/sources');
+        if (data && data.sources && elements.repoList) {
+            elements.repoList.innerHTML = data.sources.map(source => {
+                const label = source.githubRepo ? `${source.githubRepo.owner}/${source.githubRepo.repo}` : source.name;
+                return `<option value="${source.name}">${label}</option>`;
+            }).join('');
+        }
+    } catch (error) {
+        console.error("Erreur lors du chargement des sources:", error);
+    }
 }
 
 async function fetchSessions() {
@@ -270,7 +312,7 @@ function renderSessionsList() {
     // Regrouper par repo
     const grouped = {};
     state.sessions.forEach(s => {
-        const repo = s.sourceRepository || s.repo || 'Dépôt Inconnu';
+        const repo = (s.sourceContext && s.sourceContext.source) || s.sourceRepository || s.repo || 'Dépôt Inconnu';
         if (!grouped[repo]) grouped[repo] = [];
         grouped[repo].push(s);
     });
@@ -287,6 +329,10 @@ function renderSessionsList() {
 
             // Essayer de trouver un titre intelligent
             let title = s.title || '';
+            if (!title && s.prompt) {
+                 title = s.prompt;
+            }
+            // Compatibility for old payload
             if (!title && s.input && s.input.prompt) {
                  title = s.input.prompt;
             }
@@ -467,15 +513,16 @@ function renderStepper(session, activitiesData) {
     let html = '<div class="chat-container">';
 
     // Ajouter le prompt initial comme premier message utilisateur si disponible
-    if (session.input && session.input.prompt) {
+    const sessionPrompt = session.prompt || (session.input && session.input.prompt);
+    if (sessionPrompt) {
         html += `
             <div class="chat-message user">
-                <div class="chat-bubble">${parseMessageContent(session.input.prompt)}</div>
+                <div class="chat-bubble">${parseMessageContent(sessionPrompt)}</div>
             </div>
         `;
     }
 
-    if (activities.length === 0 && !session.input) {
+    if (activities.length === 0 && !sessionPrompt) {
         html += '<div class="chat-system">En attente des premières activités...</div>';
     } else {
         html += activities.map((act) => {
