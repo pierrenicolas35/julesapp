@@ -24,14 +24,24 @@
             </div>
 
             <!-- Détail de session (Stepper) -->
-            <div id="session-detail" class="hidden">
+            <div id="session-detail" class="hidden" style="display: flex; flex-direction: column; height: 100%;">
                 <button id="btn-back-sessions" class="btn-text">← Retour aux sessions</button>
                 <div class="session-info">
                     <h2 id="detail-session-id">Session</h2>
                     <span id="detail-session-status" class="chip"></span>
                 </div>
-                <div id="stepper-container" class="stepper">
+                <div id="stepper-container" class="stepper" style="flex: 1; overflow-y: auto;">
                     <!-- Les étapes du plan viendront ici -->
+                </div>
+                <!-- Zone de chat pour continuer la session -->
+                <div class="chat-input-container" style="padding: 10px; background: var(--md-sys-color-surface); border-top: 1px solid var(--md-sys-color-outline-variant);">
+                    <form id="form-session-chat" style="display: flex; gap: 8px;">
+                        <input type="text" id="input-session-message" aria-label="Message pour continuer la session" placeholder="Envoyer un message à Jules..." required style="flex: 1; padding: 12px; border: 1px solid #CAC4D0; border-radius: 24px; outline: none;">
+                        <button type="submit" class="btn-primary" id="btn-send-message" style="border-radius: 24px; padding: 10px 20px;">
+                            <span class="btn-text">Envoyer</span>
+                            <span class="spinner hidden" style="width: 16px; height: 16px;"></span>
+                        </button>
+                    </form>
                 </div>
             </div>
         </section>
@@ -41,16 +51,22 @@
             <form id="form-new-session" class="form-container">
                 <div class="form-group">
                     <label for="input-repo">Dépôt (Source / Repo ID)</label>
-                    <input type="text" id="input-repo" list="repo-list" required placeholder="ex: sources/123">
-                    <datalist id="repo-list"></datalist>
+                    <select id="input-repo" required style="width: 100%; padding: 12px; border: 1px solid #CAC4D0; border-radius: 4px;"></select>
+                </div>
+                <div class="form-group">
+                    <label for="input-branch">Branche (Optionnel)</label>
+                    <input type="text" id="input-branch" placeholder="ex: main, dev...">
                 </div>
                 <div class="form-group">
                     <label for="input-prompt">Prompt</label>
                     <textarea id="input-prompt" rows="5" required placeholder="Que voulez-vous que Jules fasse ?"></textarea>
                 </div>
-                <div class="form-group" style="display: flex; gap: 10px; align-items: center;">
-                    <input type="checkbox" id="input-plan-approval" style="width: auto;">
-                    <label for="input-plan-approval" style="margin: 0;">Interactive Plan</label>
+                <div class="form-group">
+                    <label for="input-plan-approval">Mode de démarrage</label>
+                    <select id="input-plan-approval" style="width: 100%; padding: 12px; border: 1px solid #CAC4D0; border-radius: 4px;">
+                        <option value="false">Start (Démarrage direct)</option>
+                        <option value="true">Start and Interactive Plan (Plan Interactif)</option>
+                    </select>
                 </div>
                 <div class="form-group">
                     <label for="input-automation-mode">Automation Mode</label>
